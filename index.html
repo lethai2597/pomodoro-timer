@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Timer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-600 transition-all duration-500">
+    <div class="text-white font-mono max-w-sm mx-auto">
+        <div class="text-xl font-bold text-center p-10">Pomodoro Timer</div>
+
+        <div class="grid gap-6">
+            <div id="timer" class="text-8xl text-center"></div>
+            <div id="status" class="text-sm text-center">Ready to focus?</div>
+            <button id="start" class="text-xl py-2 rounded-full bg-white text-center text-black">Start</button>
+            <div id="controls" style="display: none;">
+                <div class="grid grid-cols-2 gap-4 w-full">
+                    <button id="clear"
+                        class="block w-full text-xl py-2 rounded-full bg-white/40 text-center">Clear</button>
+                    <button id="pause"
+                        class="block w-full text-xl py-2 rounded-full bg-white text-black text-center">Pause</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="start-sound" src="start.mp3"></audio>
+    <audio id="finish-sound" src="finish.mp3"></audio>
+
+    <script>const WORK_TIME = 25 * 60;
+        const BREAK_TIME = 5 * 60;
+
+        const bodyEl = document.body;
+        const timerEl = document.getElementById("timer");
+        const startEl = document.getElementById("start");
+        const clearEl = document.getElementById("clear");
+        const pauseEl = document.getElementById("pause");
+        const controlsEl = document.getElementById("controls");
+        const statusEl = document.getElementById("status");
+        const startSoundEl = document.getElementById("start-sound");
+        const finishSoundEl = document.getElementById("finish-sound");
+
+        let timeLeft = WORK_TIME;
+        let isRunning = false;
+        let runningType = "FOCUSING"; // FOCUSING or BREAKING
+        let isPaused = false;
+
+        // ================== Dom functions ==================
+
+        function updateBodyBg() {
+            bodyEl.classList.remove("bg-slate-600", "bg-green-600", "bg-red-600");
+
+            if (isRunning) {
+                if (runningType === "FOCUSING") {
+                    bodyEl.classList.add("bg-red-600");
+                } else {
+                    bodyEl.classList.add("bg-green-600");
+                }
+            } else {
+                bodyEl.classList.add("bg-slate-600");
+            }
+        }
+
+        function updateTimerEl() {
+            const minutes = Math.floor(timeLeft / 60)
+                .toString()
+                .padStart(2, "0");
+            const seconds = (timeLeft % 60).toString().padStart(2, "0");
+            timerEl.textContent = `${minutes}:${seconds}`;
+        }
+
+        function updateStatusEl() {
+            if (!isRunning) {
+                statusEl.textContent = "Ready to start?";
+            } else {
+                statusEl.textContent =
+                    runningType === "FOCUSING" ? "Stay focused" : "Let take a break";
+            }
+        }
+
+        function updateControlsEl() {
+            if (isRunning) {
+                controlsEl.style.display = "flex";
+            } else {
+                controlsEl.style.display = "none";
+            }
+        }
+
+        function updateStartEl() {
+            if (isRunning) {
+                startEl.style.display = "none";
+            } else {
+                startEl.style.display = "block";
+            }
+        }
+
+        function updatePauseEl() {
+            if (isPaused) {
+                pauseEl.textContent = "Resume";
+            } else {
+                pauseEl.textContent = "Pause";
+            }
+        }
+
+        // ================== Logic functions ==================
+
+        setInterval(() => {
+            if (isRunning) {
+                if (isPaused) return;
+
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    updateTimerEl();
+                } else {
+                    if (runningType === "FOCUSING") {
+                        runningType = "BREAKING";
+                        timeLeft = BREAK_TIME;
+
+                        finishSoundEl.play();
+
+                        updateStatusEl();
+                        updateTimerEl();
+                    } else {
+                        resetTimer();
+                        finishSoundEl.play();
+                        updateStatusEl();
+                        updateTimerEl();
+                    }
+                    updateBodyBg();
+                }
+            }
+        }, 1000);
+
+        function initTimer() {
+            updateTimerEl();
+        }
+
+        function resetTimer() {
+            timeLeft = WORK_TIME;
+            runningType = "FOCUSING";
+            isRunning = false;
+            isPaused = false;
+
+            updateTimerEl();
+            updateStatusEl();
+            updateControlsEl();
+            updateStartEl();
+            updatePauseEl();
+        }
+
+        function startTimer() {
+            isRunning = true;
+
+            startSoundEl.play();
+
+            updateBodyBg();
+            updateStartEl();
+            updateControlsEl();
+            updateStatusEl();
+        }
+
+        function togglePauseTimer() {
+            if (isPaused) {
+                isPaused = false;
+                updatePauseEl();
+            } else {
+                isPaused = true;
+                updatePauseEl();
+            }
+        }
+
+        // ================== Event listeners ==================
+
+        startEl.addEventListener("click", startTimer);
+        clearEl.addEventListener("click", resetTimer);
+        pauseEl.addEventListener("click", togglePauseTimer);
+
+        initTimer();
+    </script>
+</body>
+
+</html>
